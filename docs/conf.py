@@ -25,3 +25,19 @@ source_suffix = '.rst'
 
 # The master toctree document
 master_doc = 'index'
+
+# Add any paths that contain custom static files (such as style sheets) here
+html_static_path = ['_static']
+
+# These paths are either relative to html_static_path or fully qualified paths
+html_css_files = [
+    'custom.css',
+]
+
+# Custom sidebar templates
+html_theme_options = {
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'style_nav_header_background': '#2980B9',
+}
