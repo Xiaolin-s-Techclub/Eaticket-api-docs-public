@@ -1,0 +1,60 @@
+/* Add custom colors and styling */
+.wy-side-nav-search {
+    background-color: #2980B9;
+}
+
+.wy-nav-side {
+    background: #343131;
+}
+
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+    color: #2980B9;
+}
+
+/* Add subtle background to content sections */
+.section {
+    padding: 20px;
+    margin-bottom: 24px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Style API endpoint sections */
+.operation {
+    border: 1px solid #e1e4e5;
+    border-radius: 4px;
+    margin: 10px 0;
+    padding: 15px;
+}
+
+.operation-get {
+    background-color: #e1f5fe;
+}
+
+.operation-post {
+    background-color: #e8f5e9;
+}
+
+.operation-put {
+    background-color: #fff3e0;
+}
+
+.operation-delete {
+    background-color: #ffebee;
+}
+
+/* Add some hover effects */
+.section:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Style headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+}
+
+/* Style code blocks */
+.highlight {
+    background: #f5f7f9;
+    border-left: 3px solid #2980B9;
+} 
