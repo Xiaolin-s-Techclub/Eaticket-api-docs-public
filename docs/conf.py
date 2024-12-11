@@ -1,3 +1,4 @@
+import sphinx_rtd_theme
 # Configuration file for the Sphinx documentation builder
 
 project = 'Eaticket'
@@ -11,7 +12,8 @@ release = '1.0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinxcontrib.openapi'
+    'sphinxcontrib.openapi',
+    'sphinx_rtd_theme'
 ]
 
 # Add any paths that contain templates here
