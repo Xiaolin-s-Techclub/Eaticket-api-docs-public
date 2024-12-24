@@ -11,13 +11,17 @@ info:
     
     Naming Conventions:
 
-    - userid: S2E12
+    - userid: 20201171
 
     - username: Sota Kobayashi
 
-    - ticket_hash: hashed string of userid + ticket_no
+    - ticket_type: type of food
 
-    - user: user object will all related information(except sensitive information)
+    - ticket_id: time based-uuid
+
+    - ticket_hash: hashed string of (userid + ticket_type + ticket_id). A unique password will be added to the string before hashing, to enforce encryption.
+
+    - user: user object will all related information(except sensitive information like password)
 
   contact:
     name: Xiaolin's Techclub
@@ -39,12 +43,14 @@ tags:
     description: Eaticket validation related endpoints
   - name: Data
     description: Data related endpoints
+  - name: Payment
+    description: Payment related endpoints
 paths:
   /user/id/{userid}:
     get:
       tags:
         - User
-      summary: Get user by userid
+      summary: Management - Get user by userid
       parameters:
         - name: userid
           in: path
@@ -68,7 +74,8 @@ paths:
     get:
       tags:
         - User
-      summary: Get the first n users in the database
+      summary: Management - Get the first n users in the database
+      description: データベースの最初のN人の情報を取得する。ユーザーが正常に登録されているかを確認するために使う。
       parameters:
         - name: limit
           in: path
@@ -90,11 +97,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /user/all/total_number:
+  /user/total_number:
     get:
       tags:
         - User
-      summary: Get total number of users in the database
+      summary: Management - Get total number of users in the database
       responses:
         '200':
           description: OK
@@ -108,11 +115,116 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /user/login/userid/{userid}/{password_hash}:
+    post:
+      tags:
+        - User
+      summary: App - login for students using userid(like S2E12) and password_hash
+      description: 最初にログインする際に使用するロジック。生徒はuseridとパスワードハッシュを使用してログインするが、
+        教員等はuseridを持たないため、username(ローマ字フルネーム)とパスワードハッシュでログインしてもらうことになる
+      parameters:
+        - name: userid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: password_hash
+          in: path
+          required: true
+          schema: 
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username: 
+                    type: string
+                    description: username(like Sota Kobayashi) of the user
+                  is_authenticated:
+                    type: boolean
+                    description: result of the login authentication(true or false)
+        '401':
+          description: Authentication Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    description: username(like Sota Kobayashi) of the user
+                  is_authenticated: 
+                    type: boolean
+                    description: result of the login authentication(true or false)
+        '404':
+          description: server error - could not authenticate user due to sever error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/login/username/{username}/{password_hash}:
+    post:
+      tags:
+        - User
+      summary: App - login for non-students(teachers and staffs) using username(first_name + last_name:) and password_hash
+      description: 最初にログインする際に使用するロジック。生徒はuseridとパスワードハッシュを使用してログインするが、
+        教員等はuseridを持たないため、username(ローマ字フルネーム)とパスワードハッシュでログインしてもらうことになる。
+        尚、教員のuseridはサーバー側で適当に00から始まるuseridを割り振る
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: password_hash
+          in: path
+          required: true
+          schema: 
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username: 
+                    type: string
+                    description: username(like Sota Kobayashi) of the user
+                  is_authenticated:
+                    type: boolean
+                    description: result of the login authentication(true or false)
+        '401':
+          description: Authentication Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    description: username(like Sota Kobayashi) of the user
+                  is_authenticated: 
+                    type: boolean
+                    description: result of the login authentication(true or false)
+        '404':
+          description: server error - could not authenticate user due to sever error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # /payment/new/{userid}/{ticket_type}:
+  # /payment/
   /eaticket/id/{userid}:
     get:
       tags:
         - Eaticket
-      summary: Get all user eatickets by user id
+      summary: App/Management - get all user eatickets a user has based on their userid
       parameters:
         - name: userid
           in: path
@@ -137,7 +249,7 @@ paths:
     delete:
       tags:
         - Eaticket
-      summary: Delete all user eatickets by user id(disabled in production)
+      summary: Development - Delete all user eatickets by user id(disabled in production)
       parameters:
         - name: userid
           in: path
@@ -163,7 +275,7 @@ paths:
     get:
       tags:
         - Eaticket
-      summary: Get user eaticket by ticket hash
+      summary: App/Management - Get user UserEaticket object by ticket hash
       parameters:
         - name: ticket_hash
           in: path
@@ -186,7 +298,7 @@ paths:
     delete:
       tags:
         - Eaticket
-      summary: Delete user eaticket by ticket hash
+      summary: Management - Delete user eaticket by ticket hash
       parameters:
         - name: ticket_hash
           in: path
@@ -210,7 +322,8 @@ paths:
     get:
       tags:
         - Eaticket
-      summary: Get the first n user eatickets in the database
+      summary: Management - Get the first n user eatickets in the database
+      description: データベースの最初のN枚の食券情報を取得する。食券のDBへの登録が正常に登録されているかを確認するために使う。
       parameters:
         - name: limit
           in: path
@@ -232,11 +345,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /eaticket/all/total_number:
+  /eaticket/total_number:
     get:
       tags:
         - Eaticket
-      summary: Get total number of user eatickets in the database
+      summary: Management - Get total number of user eatickets in the database
       responses:
         '200':
           description: OK
@@ -254,7 +367,9 @@ paths:
     post:
       tags:
         - Eaticket
-      summary: Create user eaticket by user id and ticket_type(will be logged in server!)
+      summary: Management(Not App!!!) - Create user eaticket by user id and ticket_type(will be logged in server!)
+      description: 注意！こちらはアプリから呼ばれるAPIではなく、トラブル対応等の際に使用する、強制的に食券を発行するAPIです。
+        PayPayの決済処理を飛ばして食券を発行するため、アプリからは絶対に呼ばないでください。
       parameters:
         - name: userid
           in: path
@@ -283,7 +398,7 @@ paths:
     delete:
       tags:
         - Eaticket
-      summary: Delete all user eatickets(disabled in production)
+      summary: Development - Delete all user eatickets(disabled in production)
       parameters:
         - name: force
           in: path
@@ -307,7 +422,8 @@ paths:
     get:
       tags:
         - Validation
-      summary: Validate eaticket
+      summary: App - Validate eaticket, checking whether eaticket has been used or not
+      description: 食券が使用済みかどうかの認証
       parameters:
         - name: ticket_hash
           in: path
@@ -338,7 +454,8 @@ paths:
     get:
       tags:
       - Data
-      summary: Export backup into sqlite db(will change into csv format in the future)
+      summary: Management - Export backup into csv file
+      description: データべースの全データをCSV形式のファイルにバックアップとして保存する
       responses:
         '200':
           description: Successfully exported database to local storage
@@ -352,7 +469,8 @@ paths:
     get:
       tags:
       - Data
-      summary: Export day summary into csv file and send write to spreadsheet
+      summary: Mangament - Export day summary into csv file and send write to spreadsheet
+      description: その日の分の売り上げをまとめた売上レポートを出力し、Google APIを通じて指定されたスプレッドシートに記載する
       responses:
         '200':
           description: Successfully exported and written day report to spreadsheet
@@ -362,6 +480,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     UserEaticket:
@@ -413,17 +532,13 @@ components:
             type: string
             description: email address of the user, must be in school's email address
         eatickets:
-          type: object
-          properties:
-            ticket-1:
-              type: string
-              description: type of food ticket(like TO curry)
-            ticket-2:
-              type: string
-              description: type of food ticket(like TO karaage)
-            ticket-3:
-              type: string
-              description: if applicable...
+          type: array
+          items:
+            type: object            
+            properties:
+              ticket_hash: 
+                type: string
+                description: only show the ticket_hash of the eaticket here for clarity
     Users:
       type: object
       properties:
