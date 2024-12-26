@@ -41,10 +41,12 @@ tags:
     description: Ticket related endpoints
   - name: Validation
     description: Eaticket validation related endpoints
-  - name: Data
-    description: Data related endpoints
   - name: Payment
     description: Payment related endpoints
+  - name: Kitchen
+    description: Kitchen app related endpoints
+  - name: Data
+    description: Data related endpoints
 paths:
   /user/id/{userid}:
     get:
@@ -115,24 +117,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /user/login/userid/{userid}/{password_hash}:
+  /user/login/userid:
     post:
       tags:
         - User
-      summary: App - login for students using userid(like S2E12) and password_hash
+      summary: App - login for students using userid(like 20201171) and password_hash
       description: 最初にログインする際に使用するロジック。生徒はuseridとパスワードハッシュを使用してログインするが、
         教員等はuseridを持たないため、username(ローマ字フルネーム)とパスワードハッシュでログインしてもらうことになる
-      parameters:
-        - name: userid
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: password_hash
-          in: path
-          required: true
-          schema: 
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userid:
+                  type: string
+                  description: userid(like 20201171) of the student
+                password_hash:
+                  type: string
+                  description: hashed password of the user
       responses:
         '200':
           description: OK
@@ -166,7 +170,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /user/login/username/{username}/{password_hash}:
+  /user/login/username:
     post:
       tags:
         - User
@@ -174,17 +178,22 @@ paths:
       description: 最初にログインする際に使用するロジック。生徒はuseridとパスワードハッシュを使用してログインするが、
         教員等はuseridを持たないため、username(ローマ字フルネーム)とパスワードハッシュでログインしてもらうことになる。
         尚、教員のuseridはサーバー側で適当に00から始まるuseridを割り振る
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: password_hash
-          in: path
-          required: true
-          schema: 
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password_hash
+              properties:
+                username:
+                  type: string
+                  description: username(like Sota Kobayashi) of the user
+                password_hash:
+                  type: string
+                  description: hashed password of the user
       responses:
         '200':
           description: OK
@@ -218,8 +227,159 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  # /payment/new/{userid}/{ticket_type}:
-  # /payment/
+  /user/login/reset_password/{userid}:
+    post:
+      tags:
+        - User
+      summary: App - Reset user password
+      description: Tokenを持ったパスワードリセットメールを送信する。
+        その後ユーザーがセットした新しいパスワードをハッシュ化して保存する。
+      parameters:
+        - name: userid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Password reset link sent successfully
+        '404':
+          description: User not found or server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/signup/:
+    post:
+      tags:
+        - User
+      summary: App - Create new user account
+      description: Create a new user account with the provided credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstname
+                - lastname
+                - password_hash
+                - email
+              properties:
+                firstname:
+                  type: string
+                  description: First name of the user
+                lastname:
+                  type: string
+                  description: Last name of the user
+                password_hash:
+                  type: string
+                  description: Hashed password of the user
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user
+      responses:
+        '201':
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /payment/new/{userid}:
+    post:
+      tags:
+        - Payment
+      summary: App - Start new payment for user
+      description: PayPayの決済処理を始めるためのエンドポイント
+      parameters:
+        - name: userid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ticket_type
+                - amount
+              properties:
+                ticket_type:
+                  type: string
+                  description: Type of ticket to purchase
+                amount:
+                  type: integer
+                  description: Number of eaticket ordered
+      responses:
+        '201':
+          description: Payment process activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEaticket'
+        '400':
+          description: Invalid payment request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error during payment processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /payment/history/{userid}:
+    get:
+      tags:
+        - Payment
+      summary: App - Get payment history for user
+      description: ユーザーの決済履歴を取得する
+      parameters:
+        - name: userid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved payment history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentHistory'
+        '404':
+          description: User not found or no payment history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
   /eaticket/id/{userid}:
     get:
       tags:
@@ -450,6 +610,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /kitchen/current_orders:
+    get:
+      tags:
+        - Kitchen
+      summary: Kitchen - Get all current orders
+      description: Get all orders that need to be prepared
+      responses:
+        '200':
+          description: Successfully retrieved orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Orders'
+        '404':
+          description: No orders found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error retrieving orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /kitchen/AI/predicted_orders:
+    get:
+      tags:
+        - Kitchen
+      summary: Kitchen - Predict orders using AI(experimental features)
+      description: 機械学習したAIを元にその日の各メニューの売り上げを予測する
+      responses:
+        '200':
+          description: Prediction successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Orders'
+        '500':
+          description: Server error predicting orders using model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /data/export_backup:
     get:
       tags:
@@ -510,6 +714,40 @@ components:
           type: string
           format: date-time
           description: if applicable, when the eaticket was used
+    ValidUserEatickets:
+      type: object
+      properties:
+        ticket_type:
+          type: string
+          description: type of eaticket
+        ticket_hash:
+          type: string
+          description: hash of the eaticket
+        created_at:
+          type: string
+          format: date-time
+    PaymentHistory:
+      type: array
+      items:
+        type: object
+        properties:
+          paid_at:
+            type: string
+            format: date-time
+            description: When the payment was made
+          ticket_type:
+            type: string
+            description: Type of ticket purchased
+          ticket_hash:
+            type: string
+            description: Hash of the purchased ticket
+          is_used:
+            type: boolean
+            description: Whether the ticket has been used
+          used_at:
+            type: string
+            format: date-time
+            description: When the ticket was used, if applicable
     User:
       type: object
       properties:
@@ -525,9 +763,6 @@ components:
         last_name:
           type: string
           description: last name of the user
-        student_uuid:
-          type: integer
-          description: student number(int) of the user
         email:
             type: string
             description: email address of the user, must be in school's email address
@@ -550,6 +785,43 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/User'
+    Orders:
+      type: object
+      properties:
+        total_order:
+          type: integer
+          description: Current total number of kitcehn orders
+        wa_men:
+          type: integer
+          description: Number of Japanese noodle orders
+        chuka_men:
+          type: integer
+          description: Number of Chinese noodle orders
+        lunch:
+          type: integer
+          description: Number of lunch set orders
+        torikara:
+          type: integer
+          description: Number of fried chicken orders
+        don_rice:
+          type: integer
+          description: Number of rice bowl orders
+        curry:
+          type: integer
+          description: Number of curry orders
+        TO_lunch:
+          type: integer
+          description: Number of takeout lunch set orders
+        TO_torikara:
+          type: integer
+          description: Number of takeout fried chicken orders
+        TO_don_rice:
+          type: integer
+          description: Number of takeout rice bowl orders
+        TO_curry:
+          type: integer
+          description: Number of takeout curry orders
+
     Error:
       type: object
       properties:
